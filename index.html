@@ -6,6 +6,7 @@
     <title>AI로 여는 K-에듀테크 | 한국어 강사용 8주 완성</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background: #020617; }
@@ -20,6 +21,12 @@
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .glass-dark {
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         /* Animated Blobs */
         .blob {
@@ -104,6 +111,50 @@
         .shiny-cta:active { transform: scale(0.98); }
         .shiny-cta span { position: relative; z-index: 2; display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
         
+        /* Admin Button */
+        .admin-login-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .admin-login-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 20px 30px -5px rgba(139, 92, 246, 0.7);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
         /* Week Card Hover Effects */
         .week-card {
             transition: all 0.3s ease;
@@ -114,7 +165,6 @@
             box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.3);
         }
         
-        /* Curriculum Timeline */
         .timeline-dot {
             transition: all 0.3s ease;
         }
@@ -123,9 +173,56 @@
             transform: scale(1.2);
         }
         
-        /* Language Switch */
         .lang-switch {
             transition: all 0.2s ease;
+        }
+        
+        /* Form Elements */
+        .form-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #cbd5e1;
+        }
+        
+        /* Admin Table */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .admin-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .admin-table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+        .admin-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
         }
     </style>
 </head>
@@ -134,6 +231,136 @@
     <!-- Ambient Background Blobs -->
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
+
+    <!-- Admin Login Button (Left Bottom) -->
+    <div class="admin-login-btn" onclick="openAdminLogin()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white w-5 h-5"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="modal-overlay" onclick="closeModalIfClicked(event, 'adminLoginModal')">
+        <div class="modal-content glass p-8 rounded-2xl border border-white/10">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-medium text-white">관리자 로그인</h3>
+                <button onclick="closeModal('adminLoginModal')" class="text-slate-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="form-label">이메일</label>
+                    <input type="email" id="adminEmail" class="form-input" value="one@naver.com">
+                </div>
+                <div>
+                    <label class="form-label">비밀번호</label>
+                    <input type="password" id="adminPassword" class="form-input" value="pass1234">
+                </div>
+                <button onclick="adminLogin()" class="w-full shiny-cta mt-4">
+                    <span>로그인</span>
+                </button>
+                <p class="text-xs text-slate-500 text-center mt-4">테스트 계정: one@naver.com / pass1234</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Modal -->
+    <div id="adminDashboardModal" class="modal-overlay" onclick="closeModalIfClicked(event, 'adminDashboardModal')">
+        <div class="modal-content" style="max-width: 1200px;">
+            <div class="glass p-6 rounded-2xl border border-white/10">
+                <!-- Dashboard Header -->
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-medium text-white">관리자 대시보드</h3>
+                    <button onclick="closeModal('adminDashboardModal')" class="text-slate-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-slate-900/50 border border-white/5 rounded-xl p-4">
+                        <div class="text-xs text-slate-500 mb-1">총 회원</div>
+                        <div class="text-2xl font-semibold text-white" id="totalMembers">24</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-white/5 rounded-xl p-4">
+                        <div class="text-xs text-slate-500 mb-1">신규 회원 (이번달)</div>
+                        <div class="text-2xl font-semibold text-white" id="newMembers">8</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-white/5 rounded-xl p-4">
+                        <div class="text-xs text-slate-500 mb-1">과정 신청</div>
+                        <div class="text-2xl font-semibold text-white" id="courseApplications">15</div>
+                    </div>
+                    <div class="bg-slate-900/50 border border-white/5 rounded-xl p-4">
+                        <div class="text-xs text-slate-500 mb-1">승인 대기</div>
+                        <div class="text-2xl font-semibold text-white" id="pendingApprovals">3</div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-slate-900/30 border border-white/5 rounded-xl p-4">
+                        <h4 class="text-sm font-medium text-white mb-3">회원 가입 추이</h4>
+                        <canvas id="signupChart" style="height: 200px;"></canvas>
+                    </div>
+                    <div class="bg-slate-900/30 border border-white/5 rounded-xl p-4">
+                        <h4 class="text-sm font-medium text-white mb-3">과정별 신청 현황</h4>
+                        <canvas id="courseChart" style="height: 200px;"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Member Management -->
+                <div class="mb-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                        <h4 class="text-sm font-medium text-white">회원 관리</h4>
+                        <div class="flex gap-2">
+                            <input type="text" id="memberSearch" placeholder="회원 검색..." class="form-input text-sm py-2 px-3" style="width: 200px;" onkeyup="filterMembers()">
+                            <select id="memberFilter" class="form-input text-sm py-2 px-3" style="width: 120px;" onchange="filterMembers()">
+                                <option value="all">전체</option>
+                                <option value="registered">가입 완료</option>
+                                <option value="pending">승인 대기</option>
+                            </select>
+                            <button onclick="downloadCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14"/><path d="m5 12 7 7 7-7"/></svg>
+                                CSV 다운로드
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Member Table -->
+                    <div class="overflow-x-auto">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>이름</th>
+                                    <th>연락처</th>
+                                    <th>이메일</th>
+                                    <th>지원 동기</th>
+                                    <th>신청일</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memberTableBody">
+                                <!-- Filled by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Success Modal -->
+    <div id="applicationSuccessModal" class="modal-overlay" onclick="closeModalIfClicked(event, 'applicationSuccessModal')">
+        <div class="modal-content glass p-8 rounded-2xl border border-white/10 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-green-400"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <h3 class="text-xl font-medium text-white mb-2">지원서 제출 완료</h3>
+            <p class="text-slate-400 mb-6">7일 이내에 개별 연락 드리겠습니다.</p>
+            <button onclick="closeModal('applicationSuccessModal')" class="shiny-cta px-8">
+                <span>확인</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Navigation -->
     <nav class="fixed w-full z-50 top-0 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
@@ -150,16 +377,16 @@
                 <a href="#curriculum" class="hover:text-white transition-colors">커리큘럼</a>
                 <a href="#tools" class="hover:text-white transition-colors">활용도구</a>
                 <a href="#instructor" class="hover:text-white transition-colors">강사소개</a>
-                <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+                <a href="#application" class="hover:text-white transition-colors">지원하기</a>
             </div>
 
             <div class="flex items-center gap-3">
                 <button class="lang-switch bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full text-xs font-medium border border-white/10">
                     🇰🇷 KO
                 </button>
-                <button class="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-semibold transition-all hover:scale-105 active:scale-95">
+                <a href="#application" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-semibold transition-all hover:scale-105 active:scale-95">
                     수강신청
-                </button>
+                </a>
             </div>
         </div>
     </nav>
@@ -188,12 +415,12 @@
         </p>
 
         <div class="fade-in-up delay-300 flex flex-col md:flex-row items-center gap-6">
-            <button class="shiny-cta">
+            <a href="#application" class="shiny-cta">
                 <span>
                     무료 강의안 다운로드
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 5v14"/><path d="m5 12 7 7 7-7"/></svg>
                 </span>
-            </button>
+            </a>
             <button class="text-slate-300 hover:text-white px-6 py-3 rounded-full text-sm font-medium flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 ml-0.5"><path d="M5 3l14 9-14 9V3z"/></svg>
@@ -540,20 +767,25 @@
         </div>
     </section>
 
-    <!-- Instructor Section -->
+    <!-- Instructor Section (UPDATED) -->
     <section id="instructor" class="py-20 px-6 max-w-7xl mx-auto border-t border-white/5">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             <div class="md:col-span-1">
                 <div class="glass rounded-2xl p-6 border border-white/5 text-center">
                     <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                        <span class="text-2xl font-bold text-white">K</span>
+                        <span class="text-2xl font-bold text-white">고</span>
                     </div>
-                    <h3 class="text-white font-medium text-lg">김현우</h3>
-                    <p class="text-xs text-blue-300 mb-3">K-Culture EdTech 연구소장</p>
-                    <p class="text-xs text-slate-400 mb-4">前) 국립국어원 디지털교육 자문<br>現) 한국에듀테크산업협회 이사</p>
-                    <div class="flex justify-center gap-2">
-                        <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full">#AI교육</span>
-                        <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full">#한국어</span>
+                    <h3 class="text-white font-medium text-lg">고제혁</h3>
+                    <p class="text-xs text-blue-300 mb-3">에듀포레 부회장 · 연세대학교 미래교육원 강사</p>
+                    <p class="text-xs text-slate-400 mb-4 text-left">
+                        AI 기반 교육 콘텐츠 전문가로, 에듀테크 분야에서 15년 이상의 경력을 보유하고 있습니다. 
+                        현재 에듀포레 부회장으로 재직 중이며, 연세대학교 미래교육원에서 AI와 교육의 융합을 
+                        연구하고 강의합니다. 주요 관심 분야는 생성형 AI의 교육적 적용, 적응형 학습 시스템, 
+                        K-문화 콘텐츠의 글로벌화 전략입니다.
+                    </p>
+                    <div class="flex items-center justify-center gap-2 text-xs text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+                        <span>danielko@yonsei.ac.kr</span>
                     </div>
                 </div>
             </div>
@@ -568,12 +800,67 @@
                         이 과정에서는 도구 사용법을 넘어, 한국어 수업에 진짜로 적용하는 노하우를 전수합니다.
                     </p>
                     <div class="flex flex-wrap gap-3">
-                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">서울대 언어학 박사</div>
-                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">TOPIK 출제위원</div>
-                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">CES 2024 강연</div>
+                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">연세대 미래교육원</div>
+                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">에듀포레 부회장</div>
+                        <div class="text-xs bg-slate-800 px-3 py-1.5 rounded-full text-slate-300">AI 교육 전문가</div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Application Form Section (NEW) -->
+    <section id="application" class="py-20 px-6 max-w-4xl mx-auto border-t border-white/5">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-4">
+                Apply Now
+            </div>
+            <h2 class="text-3xl md:text-4xl font-medium text-white tracking-tight mb-4">
+                지원하기
+            </h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">
+                연세대학교 미래교육원 AI K-Culture 에듀테크 한국어교사 전문가 과정
+            </p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 md:p-10 border border-white/5">
+            <form id="applicationForm" onsubmit="submitApplication(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="form-label">성명</label>
+                        <input type="text" id="name" class="form-input" placeholder="홍길동" required>
+                    </div>
+                    <div>
+                        <label class="form-label">연락처</label>
+                        <input type="tel" id="phone" class="form-input" placeholder="010-1234-5678" required>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="form-label">이메일</label>
+                    <input type="email" id="email" class="form-input" placeholder="example@email.com" required>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="form-label">지원 동기</label>
+                    <textarea id="motivation" rows="5" class="form-input resize-none" placeholder="이 과정에 지원하게 된 동기와 기대하는 바를 자유롭게 작성해주세요." required></textarea>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="agree" class="w-4 h-4 bg-white/5 border border-white/10 rounded text-blue-600 focus:ring-blue-500 focus:ring-offset-0" required>
+                        <span class="text-sm text-slate-300">개인정보 수집·이용에 동의합니다 <span class="text-red-400">(필수)</span></span>
+                    </label>
+                    <p class="text-xs text-slate-500 mt-2">개인정보는 지원서 처리 목적으로만 사용되며, 3개월 후 파기됩니다.</p>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="shiny-cta px-12 py-3">
+                        <span>지원서 제출</span>
+                    </button>
+                    <p class="text-xs text-slate-500 mt-4">제출 후 7일 이내 개별 연락 드립니다.</p>
+                </div>
+            </form>
         </div>
     </section>
 
@@ -586,9 +873,9 @@
                 8주 후, AI 없이는 수업을 기획할 수 없을 겁니다.
             </p>
             <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <button class="shiny-cta px-8 py-3">
+                <a href="#application" class="shiny-cta px-8 py-3">
                     <span>8주 과정 신청하기 →</span>
-                </button>
+                </a>
                 <button class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3 rounded-full text-sm font-medium transition-all">
                     강의계획서 PDF
                 </button>
@@ -613,15 +900,15 @@
                 <div>
                     <h4 class="text-white font-medium mb-4 text-sm">과정</h4>
                     <ul class="space-y-2 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-blue-400 transition-colors">8주 커리큘럼</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition-colors">선행 학습</a></li>
+                        <li><a href="#curriculum" class="hover:text-blue-400 transition-colors">8주 커리큘럼</a></li>
+                        <li><a href="#tools" class="hover:text-blue-400 transition-colors">활용 도구</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-medium mb-4 text-sm">지원</h4>
                     <ul class="space-y-2 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-blue-400 transition-colors">FAQ</a></li>
-                        <li><a href="#" class="hover:text-blue-400 transition-colors">1:1 문의</a></li>
+                        <li><a href="#faq" class="hover:text-blue-400 transition-colors">FAQ</a></li>
+                        <li><a href="#application" class="hover:text-blue-400 transition-colors">지원하기</a></li>
                     </ul>
                 </div>
                 <div>
@@ -642,6 +929,201 @@
 
     <script>
         lucide.createIcons({ attrs: { "stroke-width": 1.5 } });
+
+        // ========== ADMIN FUNCTIONS ==========
+        
+        // Sample member data (in real app, this would come from a database)
+        let members = [
+            { name: '김민수', phone: '010-1234-5678', email: 'minsu@email.com', motivation: 'AI를 활용한 한국어 교육에 관심이 많습니다.', date: '2024-03-15', status: 'registered' },
+            { name: '이지은', phone: '010-2345-6789', email: 'jieun@email.com', motivation: '해외에서 한국어를 가르치고 있습니다.', date: '2024-03-14', status: 'registered' },
+            { name: '박서준', phone: '010-3456-7890', email: 'seojun@email.com', motivation: '에듀테크 스타트업을 준비 중입니다.', date: '2024-03-13', status: 'registered' },
+            { name: '최유진', phone: '010-4567-8901', email: 'yujin@email.com', motivation: 'TOPIK 강의에 AI를 접목하고 싶습니다.', date: '2024-03-12', status: 'pending' },
+            { name: '정우성', phone: '010-5678-9012', email: 'woosung@email.com', motivation: '연세대 미래교육원 과정을 수강하고 싶습니다.', date: '2024-03-11', status: 'pending' },
+            { name: '손예진', phone: '010-6789-0123', email: 'yejin@email.com', motivation: 'K-콘텐츠와 한국어 교육의 융합에 관심이 있습니다.', date: '2024-03-10', status: 'registered' },
+        ];
+
+        // Charts
+        let signupChart, courseChart;
+
+        function openAdminLogin() {
+            document.getElementById('adminLoginModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function closeModalIfClicked(event, modalId) {
+            if (event.target === event.currentTarget) {
+                closeModal(modalId);
+            }
+        }
+
+        function adminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (email === 'one@naver.com' && password === 'pass1234') {
+                closeModal('adminLoginModal');
+                openAdminDashboard();
+            } else {
+                alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+            }
+        }
+
+        function openAdminDashboard() {
+            document.getElementById('adminDashboardModal').style.display = 'flex';
+            renderMemberTable();
+            initCharts();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalMembers').innerText = members.length;
+            document.getElementById('newMembers').innerText = members.filter(m => m.date >= '2024-03-10').length;
+            document.getElementById('courseApplications').innerText = members.length;
+            document.getElementById('pendingApprovals').innerText = members.filter(m => m.status === 'pending').length;
+        }
+
+        function renderMemberTable() {
+            const tbody = document.getElementById('memberTableBody');
+            const searchTerm = document.getElementById('memberSearch')?.value.toLowerCase() || '';
+            const filter = document.getElementById('memberFilter')?.value || 'all';
+            
+            let filteredMembers = members.filter(m => {
+                if (filter !== 'all' && m.status !== filter) return false;
+                if (searchTerm && !m.name.toLowerCase().includes(searchTerm) && !m.email.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+            
+            tbody.innerHTML = filteredMembers.map(m => `
+                <tr>
+                    <td>${m.name}</td>
+                    <td>${m.phone}</td>
+                    <td>${m.email}</td>
+                    <td class="max-w-xs truncate">${m.motivation}</td>
+                    <td>${m.date}</td>
+                    <td><span class="px-2 py-1 rounded-full text-xs ${m.status === 'registered' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}">${m.status === 'registered' ? '가입 완료' : '승인 대기'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function filterMembers() {
+            renderMemberTable();
+        }
+
+        function downloadCSV() {
+            const searchTerm = document.getElementById('memberSearch')?.value.toLowerCase() || '';
+            const filter = document.getElementById('memberFilter')?.value || 'all';
+            
+            let filteredMembers = members.filter(m => {
+                if (filter !== 'all' && m.status !== filter) return false;
+                if (searchTerm && !m.name.toLowerCase().includes(searchTerm) && !m.email.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+            
+            const headers = ['이름', '연락처', '이메일', '지원 동기', '신청일', '상태'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredMembers.map(m => 
+                    [m.name, m.phone, m.email, `"${m.motivation}"`, m.date, m.status === 'registered' ? '가입 완료' : '승인 대기'].join(',')
+                )
+            ].join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '회원명부.csv';
+            link.click();
+        }
+
+        function initCharts() {
+            // Signup Chart
+            const signupCtx = document.getElementById('signupChart')?.getContext('2d');
+            if (signupCtx) {
+                if (signupChart) signupChart.destroy();
+                signupChart = new Chart(signupCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['1월', '2월', '3월', '4월', '5월', '6월'],
+                        datasets: [{
+                            label: '회원 가입 수',
+                            data: [12, 19, 24, 18, 22, 15],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+            
+            // Course Chart
+            const courseCtx = document.getElementById('courseChart')?.getContext('2d');
+            if (courseCtx) {
+                if (courseChart) courseChart.destroy();
+                courseChart = new Chart(courseCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['8주 기본 과정', 'TOPIK 집중 과정', '문화 특화 과정'],
+                        datasets: [{
+                            data: [15, 8, 5],
+                            backgroundColor: ['#2563eb', '#4f46e5', '#7c3aed'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#94a3b8' } } }
+                    }
+                });
+            }
+        }
+
+        // ========== APPLICATION FORM ==========
+        
+        function submitApplication(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            const motivation = document.getElementById('motivation').value;
+            
+            // Add to members array
+            const today = new Date().toISOString().split('T')[0];
+            members.push({
+                name: name,
+                phone: phone,
+                email: email,
+                motivation: motivation,
+                date: today,
+                status: 'pending'
+            });
+            
+            // Show success modal
+            document.getElementById('applicationSuccessModal').style.display = 'flex';
+            
+            // Reset form
+            document.getElementById('applicationForm').reset();
+            
+            // Update admin dashboard if open
+            if (document.getElementById('adminDashboardModal').style.display === 'flex') {
+                updateStats();
+                renderMemberTable();
+                initCharts();
+            }
+        }
     </script>
 </body>
 </html>
